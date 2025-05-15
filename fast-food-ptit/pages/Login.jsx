@@ -8,14 +8,30 @@ const Login = () => {
     const navigate = useNavigate();
 
     // Xử lý đăng nhập
-    const HandleLogin = (e) => {
+    const HandleLogin = async (e) => {
         e.preventDefault();
 
         // Kiểm tra thông tin đăng nhập
-        if (phonenumber === "03397465555" && password === "Lamthao1") {
-            // Lưu thông tin người dùng vào localStorage
-            localStorage.setItem("user", JSON.stringify({ username: phonenumber }));
-            // Điều hướng sang trang /home
+        
+        const response = await fetch("http://localhost:8080/api/users/login", {
+            method :"POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "phone":phonenumber,
+                "password" : password
+            })
+        })
+        
+        
+        
+
+        if (response.status == 200) {
+            const data = await response.json()
+
+            localStorage.setItem("user", JSON.stringify(data));
+
             window.location.href = "/home";
         } else {
             setError("Sai Tên Dăng Nhập Hoặc Mật Khẩu");

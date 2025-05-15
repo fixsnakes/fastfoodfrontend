@@ -37,7 +37,7 @@ const Navbar = () => {
                     <Link to="/cart"><CiShoppingCart className="w-7 h-7"></CiShoppingCart></Link>
                    
                 
-                    <p>{user.username}</p>
+                    <p>{user.phone}</p>
                     <button onClick={handleLogout} className="p-2 text-sm text-white bg-black rounded-md hover:scale-110 hover:cursor-pointer">Đăng Xuất</button>
                 </div>
             )}

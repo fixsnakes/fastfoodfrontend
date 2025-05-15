@@ -2,106 +2,31 @@ import React, { useEffect, useState } from "react";
 
 import { CiShoppingCart } from "react-icons/ci";
 import { Link } from "react-router-dom";
-const productsData = [
-    {
-      id: 'SP001',
-      name: 'Burger Bò Phô Mai',
-      description: 'Burger bò kết hợp với phô mai béo ngậy',
-      price: 45000,
-      category: 'burger',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/Burger-Zinger.jpg?v=L7DYr4',
-    },
-    {
-      id: 'SP002',
-      name: 'Gà Rán Giòn Cay',
-      description: 'Miếng gà rán giòn tan, vị cay nồng',
-      price: 52000,
-      category: 'gà rán',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/1-Fried-Chicken.jpg?v=L7DYr4',
-    },
-    {
-      id: 'SP003',
-      name: 'Pepsi Lon 330ml',
-      description: 'Nước ngọt Pepsi giải khát sảng khoái',
-      price: 12000,
-      category: 'nước ngọt',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/PEPSI_CAN.jpg?v=L7DYr4',
-    },
-    {
-      id: 'SP004',
-      name: 'Mì Ý Bò Bằm',
-      description: 'Sợi mì Ý mềm mịn cùng sốt bò bằm đậm đà',
-      price: 60000,
-      category: 'mì',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/MI-Y-GA-VIEN.jpg?v=L7DYr4',
-    },
-    {
-      id: 'SP005',
-      name: 'Cơm Gà Sốt Teriyaki',
-      description: 'Cơm trắng dẻo ăn kèm gà sốt teriyaki thơm ngon',
-      price: 55000,
-      category: 'cơm',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/Rice-Teriyaki.jpg?v=3wbw1g',
-    },
-    {
-      id: 'SP006',
-      name: 'Burger Gà Giòn',
-      description: 'Burger kẹp gà rán giòn và rau tươi',
-      price: 47000,
-      category: 'burger',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/Burger-Flava.jpg?v=3wbw1g',
-    },
-    {
-      id: 'SP007',
-      name: 'Nước Cam Ép',
-      description: 'Nước cam tươi mát không đường hóa học',
-      price: 18000,
-      category: 'nước ngọt',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/7UP_CAN.jpg?v=3wbw1g',
-    },
 
-    {
-      id: 'SP008',
-      name: 'Salad Hạt',
-      description: 'Salad Hạt',
-      price: 39000,
-      category: 'salad',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/SALAD-HAT.jpg?v=3wbw1g',
-    },
-
-    {
-      id: 'SP009',
-      name: 'Khoai Tây Chiên',
-      description: 'Khoai tây Chiên',
-      price: 20000,
-      category: 'Khoai Tây',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/FF-L.jpg?v=3wbw1g',
-    },
-
-    {
-      id: 'SP0010',
-      name: 'Súp Rong Biển',
-      description: 'Súp Rong Biển',
-      price: 20000,
-      category: 'Súp',
-      imageUrl: 'https://static.kfcvietnam.com.vn/images/items/lg/Soup-Rong-Bien.jpg?v=3wbw1g',
-    },
-   
-  ];
 
 
 
 const Home = () => {
 
+    const user = JSON.parse(localStorage.getItem("user"));
 
-    const [searchTerm,setSearchTerm] = useState('');
-    const [sortAsc,setSortAsc] = useState(true);
     
-    //State lưu giỏ hàng
+    const [productdata,setproductdata] = useState([])
+    const getlistProduct = async() => {
+        const response = await fetch("http://localhost:8080/api/products")
+
+        const data = await response.json();
+        setproductdata(data)
+    }
+
+    useEffect(() => {
+        getlistProduct()
+    },[])
+
+
     const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart') || '[]'));
     
     const [message,setMessage] = useState('');
-    // Mỗi khi cart thay đổi, lưu lại localStorage và phát sự kiện
 
     
     
@@ -109,7 +34,7 @@ const Home = () => {
         setCart(preCart => {
             const udpatedcart = [...preCart];
 
-            const existingproduct = udpatedcart.find((item) => item.id == product.id);
+            const existingproduct = udpatedcart.find((item) => item.product_id == product.product_id);
             if(existingproduct){
 
                 existingproduct.quantity += 1;
@@ -133,9 +58,7 @@ const Home = () => {
 
     
 
-    const filterProducts = productsData
-    .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a,b) => (sortAsc ? a.price - b.price : b.price - a.price))
+
 
     return (
         <>
@@ -146,32 +69,15 @@ const Home = () => {
 
                   
                 </>)}
-                {/* Tim Kiem, Sap Xep */}
-
-                <div className="flex items-center gap-10 mb-6">
-                    {/* Tim Kiem */}
-                    <input type="text" 
-                    placeholder="Tìm kiếm sản phẩm...."
-                    className="border p-2 rounded-md w-100"
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-
-                    {/* Sap xep san pham */}
-
-                    <button onClick={() => setSortAsc(!sortAsc)} className="p-2 text-white text-md bg-black rounded-md"
-                        
-                        >Sắp Xếp Theo: {sortAsc ? 'Tăng Dần' : 'Giảm Dần'}</button>
-
-                </div>
                
 
                {/* display san pham */}
 
                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                    {filterProducts.map((product) => (
+                    {productdata.map((product) => (
                         <>
-                            <div key={product.id} className="flex flex-col p-4 shadow:md border gap-5 rounded-2xl">
-                                <img src={product.imageUrl} alt="" />
+                            <div key={product.product_id} className="flex flex-col p-4 shadow:md border gap-5 rounded-2xl">
+                                <img src={product.img_url} alt="" />
 
                                 {/* display name and price */}
 
