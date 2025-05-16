@@ -8,13 +8,14 @@ const Cart = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     const [cart, setCart] = useState(JSON.parse(localStorage.getItem("cart") || "[]"));
     const [partners, setPartners] = useState([]); 
-    const [voucher, setVoucher] = useState(""); 
-    const [discount, setDiscount] = useState(0);
-    const [voucherName, setVoucherName] = useState(""); 
     const [error, setError] = useState(""); 
     const [selectedPartner, setSelectedPartner] = useState(null); 
     const [shippingAddress, setShippingAddress] = useState(""); 
-    const [voucherdata,setvoucherdata] = useState()
+    const [voucher,setVoucher] = useState("")
+    const [voucherdata,setvoucherdata] = useState("")
+    const [tongthanhtoan,setTongthanhtoan]  = useState("")
+    const [giamgia,setGiamgia] = useState("")
+    const [voucherdetail,setvoucherdetail] = useState(false)
 
     useEffect(() => {
         const fetchPartners = async () => {
@@ -29,17 +30,28 @@ const Cart = () => {
         fetchPartners();
     }, []);
 
-   
+
     const getTongDonHang = () => {
         let totalAmount = 0;
         cart.map((item) => (totalAmount += item.quantity * item.price));
-  
-        if (discount > 0) {
-            totalAmount -= totalAmount * (discount / 100);
-        }
+        
         return totalAmount;
     };
 
+    const getGiamgia = () =>{
+        if(voucherdata != ""){
+           return getTongDonHang() * (voucherdata.discount / 100);
+        }
+
+        return 0;
+
+        
+    }
+
+    const getTongThanhToan = () => {
+        return getTongDonHang() - getGiamgia()
+
+    }
 
     const handleApplyVoucher = async () => {
         const response = await fetch(`http://localhost:8080/api/vouchers/${voucher}`);
@@ -47,28 +59,27 @@ const Cart = () => {
             const data = await response.json();
            
             setvoucherdata(data)
-            setVoucherName(data.code)
-            setDiscount(data.discount)
-            setError(""); 
+            setvoucherdetail("Áp Dụng Thành Công " +  data.code)
            
         } else {
-            setError("Voucher không hợp lệ.");
+            setvoucherdata("")
+            setvoucherdetail("Không tìm thấy mã giảm giá")
         }
     };
 
 
     const HandleThanhToan = async () => {
         const orderDetails = cart.map((item) => ({
-            product_id: item.product_id,
+            product: {product_id: item.product_id},
             price: item.price,
             quantity: item.quantity,
         }));
 
         const orderData = {
-            customer_id: user.customer_id, 
-            order_type: "Online",
-            total_amount: getTongDonHang(),
-            voucher_id: voucherdata.voucher_id, 
+            customer: {customer_id : user.customer_id}, 
+            order_type: "online",
+            total_amount: getTongThanhToan(),
+            voucher_id: voucherdata != "" ? {voucher : voucherdata.voucher_id} : null, 
             payment_method: "Tiền Mặt",
             shipping_address: shippingAddress,
             deliverypartner_id: selectedPartner,
@@ -95,7 +106,7 @@ const Cart = () => {
         }
     };
 
-    // Tăng số lượng sản phẩm
+    // Tăng 
     const handleIncreaseQuantity = (id_item) => {
         setCart((prevCart) => {
             const updatedCart = [...prevCart];
@@ -108,7 +119,7 @@ const Cart = () => {
         });
     };
 
-    // Giảm số lượng sản phẩm
+    // Giảm 
     const handleDecreaseQuantity = (id_item) => {
         setCart((prevCart) => {
             const updatedCart = [...prevCart];
@@ -120,6 +131,17 @@ const Cart = () => {
             return updatedCart;
         });
     };
+
+
+    // Xóa
+    const handleDeleteItem = (id_item) => {
+        setCart((prevCart) => {
+            const updatedCart = prevCart.filter((item) => id_item !== item.product_id);
+            localStorage.setItem("cart", JSON.stringify(updatedCart));
+            return updatedCart;
+            
+        })
+    }
 
     return (
         <>
@@ -135,7 +157,7 @@ const Cart = () => {
                                     <img className="w-30 h-30" src={product.img_url} alt={product.name} />
                                     <div className="flex flex-col gap-5">
                                         <p className="text-md font-bold">{product.name}</p>
-                                        <button className="flex underline font-bold text-sm hover:cursor-pointer">Xóa</button>
+                                        <button onClick={() => handleDeleteItem(product.product_id)} className="flex underline font-bold text-sm hover:cursor-pointer">Xóa</button>
                                     </div>
                                 </div>
 
@@ -182,19 +204,19 @@ const Cart = () => {
                                 Áp dụng
                             </button>
                         </div>
+
+                        {voucherdetail && (
+                            <>
+                                <p className=" mt-3 text-black text-sm font-semibold">{voucherdetail}</p>
+                            </>
+                        )}
                     </div>
 
-                    {voucherName && (
-                        <div className="mb-4">
-                            <p className="text-green-500 font-semibold">Bạn được giảm {voucherdata.discount} phần trăm</p>
-                        </div>
-                    )}
-
-                    {error && <p className="text-red-500 mb-4">{error}</p>}
+                    
 
                     <label className="text-sm font-medium" htmlFor="diachigiaohang">Địa Chỉ Giao Hàng</label>
                     <input
-                        className="mb-4 border-b w-full p-3"
+                        className="mb-4 border border-gray-300 rounded-lg p-2 w-full"
                         type="text"
                         placeholder="Nhập địa chỉ giao hàng"
                         id="diachigiaohang"
@@ -211,9 +233,14 @@ const Cart = () => {
                         <span>{getTongDonHang().toLocaleString("VN")}đ</span>
                     </div>
 
+                    <div className="flex justify-between text-sm mb-2">
+                        <span>Giảm giá:</span>
+                        <span>{getGiamgia().toLocaleString("VN")}đ</span>
+                    </div>
+
                     <div className="flex justify-between text-lg font-semibold mb-4">
                         <span>Tổng thanh toán</span>
-                        <span>{getTongDonHang().toLocaleString("VN")}</span>
+                        <span>{getTongThanhToan().toLocaleString("VN")}</span>
                     </div>
 
                     <div className="mb-4">
