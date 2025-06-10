@@ -32,6 +32,13 @@ const CustomerManager = () => {
     //addcustomer
     const addCustomer = async () => {
 
+        setcustomerid("")
+        setAddress("");
+        setEmail("");
+        setFullname("");
+        setPassword("")
+        setPhone("")
+
         const data = {
             "fullname":fullname,
             "email" :email,
@@ -106,7 +113,7 @@ const CustomerManager = () => {
 
 
         setiseditpopupopen(false);
-
+        
         if(response.status == 200){
             toast.success('Cập nhật thành công', {
                 position: "top-right",

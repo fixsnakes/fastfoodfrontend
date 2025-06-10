@@ -7,7 +7,7 @@ const Cart = () => {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem("user"));
     const [cart, setCart] = useState(JSON.parse(localStorage.getItem("cart") || "[]"));
-    const [partners, setPartners] = useState([]); 
+    
     const [error, setError] = useState(""); 
     const [selectedPartner, setSelectedPartner] = useState(null); 
     const [shippingAddress, setShippingAddress] = useState(""); 
@@ -17,19 +17,7 @@ const Cart = () => {
     const [giamgia,setGiamgia] = useState("")
     const [voucherdetail,setvoucherdetail] = useState(false)
 
-    useEffect(() => {
-        const fetchPartners = async () => {
-            const response = await fetch("http://localhost:8080/api/partners");
-            if (response.ok) {
-                const data = await response.json();
-                setPartners(data); 
-            } else {
-                setError("Không thể tải danh sách đối tác.");
-            }
-        };
-        fetchPartners();
-    }, []);
-
+    
 
     const getTongDonHang = () => {
         let totalAmount = 0;
@@ -54,7 +42,13 @@ const Cart = () => {
     }
 
     const handleApplyVoucher = async () => {
-        const response = await fetch(`http://localhost:8080/api/vouchers/${voucher}`);
+        const response = await fetch(`http://localhost:8084/api/voucher`,{
+            method : "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({"code": voucher}),
+        });
         if (response.ok) {
             const data = await response.json();
            
@@ -70,24 +64,22 @@ const Cart = () => {
 
     const HandleThanhToan = async () => {
         const orderDetails = cart.map((item) => ({
-            product: {product_id: item.product_id},
-            price: item.price,
+            product_id: item.product_id,
+            price: item.price * item.quantity,
             quantity: item.quantity,
         }));
 
         const orderData = {
-            customer: {customer_id : user.customer_id}, 
-            order_type: "online",
-            total_amount: getTongThanhToan(),
-            voucher_id: voucherdata != "" ? {voucher : voucherdata.voucher_id} : null, 
-            payment_method: "Tiền Mặt",
+            customer_id: user.customer_id, 
+            order_type: "ONLINE",
+            total_amount : getTongThanhToan(),
+            voucher_id: voucherdata != "" ? voucherdata.voucher_id : null, 
             shipping_address: shippingAddress,
-            deliverypartner_id: selectedPartner,
             orderDetails: orderDetails,
         };
 
         try {
-            const response = await fetch("http://localhost:8080/api/createorder", {
+            const response = await fetch("http://localhost:8083/api/order", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -97,7 +89,30 @@ const Cart = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                navigate("/ordersuccess", { state: { orderId: data.order_id } });
+
+                const paymentData = {
+                    order_id : data.order_id,
+                    payment_method : "CASH",
+                    amount : getTongThanhToan()
+                }
+                
+                const processPayment = await fetch("http://localhost:8085/api/payment/process",{
+                    method : "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(paymentData),
+                })
+
+                if (processPayment.ok){
+                    navigate("/ordersuccess", { state: { orderId: data.order_id } });
+                }
+
+                else{
+                    setError("Có lỗi xảy ra khi xử lý thanh toán.");
+                }
+
+                
             } else {
                 setError("Có lỗi xảy ra khi tạo đơn hàng.");
             }
@@ -243,22 +258,6 @@ const Cart = () => {
                         <span>{getTongThanhToan().toLocaleString("VN")}</span>
                     </div>
 
-                    <div className="mb-4">
-                        <label htmlFor="partner" className="block text-sm font-medium text-gray-700">Chọn đối tác giao hàng</label>
-                        <select
-                            id="partner"
-                            value={selectedPartner}
-                            onChange={(e) => setSelectedPartner(e.target.value)}
-                            className="border p-2 w-full rounded"
-                        >
-                            <option value="">Chọn đối tác</option>
-                            {partners.map((partner) => (
-                                <option key={partner.delivery_id} value={partner.delivery_id}>
-                                    {partner.name_delivery}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
 
                     <button
                         onClick={HandleThanhToan}

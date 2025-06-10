@@ -13,7 +13,7 @@ const Home = () => {
     
     const [productdata,setproductdata] = useState([])
     const getlistProduct = async() => {
-        const response = await fetch("http://localhost:8080/api/products")
+        const response = await fetch("http://localhost:8082/api/products")
 
         const data = await response.json();
         setproductdata(data)

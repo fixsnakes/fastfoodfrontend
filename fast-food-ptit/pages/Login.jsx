@@ -13,7 +13,7 @@ const Login = () => {
 
         // Kiểm tra thông tin đăng nhập
         
-        const response = await fetch("http://localhost:8080/api/users/login", {
+        const response = await fetch("http://localhost:8081/api/customers/login", {
             method :"POST",
             headers: {
                 "Content-Type": "application/json",
